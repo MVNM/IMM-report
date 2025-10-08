@@ -1,0 +1,203 @@
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[
+a4paper,
+headheight=20mm,% Set \headheight to 10mm
+bottom=3cm
+]{geometry}
+\usepackage{layout}
+\usepackage{lipsum}
+% AMS style packages
+\usepackage{amsfonts}
+\usepackage{amsmath}
+%\usepackage{amsrefs}
+\usepackage{amssymb}
+\usepackage{amstext}
+\usepackage{amsthm}
+\usepackage{array}
+
+%money stuff
+\usepackage{textcomp}
+\usepackage{eurosym}
+
+%noindent
+\usepackage{parskip}
+
+\usepackage[table]{xcolor}
+
+% Standard useful packages
+\usepackage[shortlabels]{enumitem}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{mathrsfs}
+\usepackage{multicol}
+\usepackage{wasysym}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{url}
+\usepackage{csquotes}
+
+% algorithms
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+% tableau bayésiens
+\usepackage{booktabs}
+\usepackage{multirow}
+
+% Font warnings
+\usepackage{silence}
+\WarningFilter{latexfont}{Font shape}
+% Tikz package and libraries
+\usepackage{tikz}
+\usepackage{tikz-cd}
+%\usepackage{tikzducks}
+\usetikzlibrary{arrows, backgrounds, calc, chains, decorations, patterns, positioning, shapes, arrows.meta}
+
+% pstricks
+\usepackage{pstricks}
+\usepackage{pstricks-add}
+
+%nicematrix
+\usepackage{nicematrix}
+
+%svg
+\usepackage[inkscapeformat=png]{svg}
+
+% tableau stylés
+\usepackage{mathtools, nccmath, hhline}
+\usepackage{makecell}
+\setcellgapes{3pt}
+
+% Environments
+\theoremstyle{plain}
+\theoremstyle{definition}
+\newtheorem{thm}{Theorem}
+\newtheorem{conj}{Conjecture}
+\newtheorem{cor}{Corollary}
+\newtheorem{defi}{Definition}
+\newtheorem{lem}{Lemma}
+\newtheorem{prop}{Proposition}
+\newtheorem{prob}{Problem}
+\newtheorem{exo}{Exercise}
+\newenvironment{preci}{\textbf{Precision} : }{}
+\newenvironment{res}[1][]{\textbf{\underline{Resolution} #1} :\\}{\vspace{.2cm}}{}
+
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+\newtheorem*{note}{Note}
+
+\newcommand{\numberwithinenvs}{subsection}
+
+\numberwithin{thm}{\numberwithinenvs}
+\numberwithin{conj}{\numberwithinenvs}
+\numberwithin{cor}{\numberwithinenvs}
+\numberwithin{defi}{\numberwithinenvs}
+\numberwithin{lem}{\numberwithinenvs}
+\numberwithin{prop}{\numberwithinenvs}
+\numberwithin{prob}{\numberwithinenvs}
+\numberwithin{exo}{\numberwithinenvs}
+\numberwithin{remark}{\numberwithinenvs}
+\numberwithin{example}{\numberwithinenvs}
+
+\renewcommand{\qedsymbol}{$\blacksquare$}
+\newenvironment{fprf}{\par{\itshape Non-proof.}}{\qed}
+\newenvironment{fthm}{{\itshape Non-theorem.}}{\vspace{.2cm}}
+
+% Comments
+\usepackage{comment}
+
+
+%custom titling
+\usepackage{titling}
+\newcommand{\seance}[1]{\newcommand{\theseance}{#1}}
+\newcommand{\authors}[1]{\newcommand{\theauthor}{#1}}
+\newcommand{\rapport}[1]{\newcommand{\rapportNb}{#1}}
+\newcommand{\synthese}[1]{\newcommand{\syntheseNb}{#1}\thematic{Résumé}}
+\newcommand{\thematic}[1]{\newcommand{\theThematic}{#1}}
+\newcommand{\mnemonic}[1]{\newcommand{\theMnemonic}{#1}}
+\newcommand{\course}[1]{\newcommand{\theCourse}{#1}}
+\newcommand{\mytitle}[1]{
+    \begin{center}
+        \textbf{\LARGE\thetitle}
+    \end{center}
+    \vspace{.5cm}
+}
+\newcommand{\mytitlewithauthor}[1]{
+    \begin{center}
+        \textbf{\LARGE\thetitle}
+        \\
+        \theauthor
+    \end{center}
+    \vspace{.5cm}
+}
+
+
+% Custom commands
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\ZZ}{\mathbb{Z}}
+\newcommand{\QQ}{\mathbb{Q}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\CC}{\mathbb{C}}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+
+
+% Header and footer
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage[bottom]{footmisc}
+\pagestyle{fancy}
+\fancyhead[L]{\includegraphics[width=0.2\textwidth]{assets/ulb/ulb}}
+\fancyhead[R]{\textsc{\texttt{\theMnemonic}, \texttt{\theThematic}}}
+\fancyfoot[C]{\thepage}
+%\fancyfoot[L]{\today}
+%\fancyfoot[R]{\textsc{\thepage\ / \pageref{LastPage} }}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+
+% Listings
+\usepackage{listingsutf8}
+\usepackage{listings}
+\definecolor{backgroundgray}{RGB}{250,250,250}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codegray2}{rgb}{0.5,0.5,0.5}
+\definecolor{codewriting}{rgb}{0.2,0.2,0.2}
+
+\lstset{
+    language=python,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    backgroundcolor=\color{backgroundgray},
+    commentstyle=\color{codegray2},
+    keywordstyle=\bfseries\color{red!50},
+    %frame=single,
+    aboveskip=12pt,
+    belowskip=12pt,
+    xleftmargin=12pt,
+    xrightmargin=12pt,
+    basicstyle=\ttfamily\small\color{codewriting},
+    numbers=left,
+    numbersep=5pt,
+    numberstyle=\tiny\color{codegray},
+    literate={é}{{\'e}}1{à}{{\`a}}1{è}{{\`e}}1{ç}{{\c c}}1{~}{{$\sim$}}1{œ}{{\oe}}1
+}
+
+% custom figure numbering
+\numberwithin{equation}{subsection}
+\counterwithin{figure}{section}
+
+% hyperref
+\usepackage[colorlinks = true,
+            linkcolor = purple,
+            anchorcolor = blue,
+            citecolor = blue]{hyperref}
+
+% bibliography
+\usepackage[numbers]{natbib}
+\bibliographystyle{acm}
