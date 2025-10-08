@@ -1,0 +1,46 @@
+\section{Radial Distortion Removal}\label{sec:radialdistortion}
+
+In the course, we saw that radial distortion can be modeled as follows:
+\begin{equation}\label{eq:radialdistortion}
+\begin{cases}
+    x'&=p_x+(x-p_x)(1+k_1 r^2+k_2 r^4)\\
+    y'&=p_y+(y-p_y)(1+k_1 r^2+k_2 r^4)
+\end{cases}
+\end{equation}
+Where the point $(x,y)$ lands in $(x',y')$ in the distorted image, with
+$r^2=\left\| (x,y)-(p_x,p_y) \right\|_2^2=(x-p_x)^2+(y-p_y)^2$.
+This means that all points $(x,y)$ at an equal distance $d$ from the principal point $p=(p_x,p_y)$ get distorted the
+same amount.
+Furthermore, only knowing $p$ and $k_1,k_2$ enables one to invert any distortion by inverting
+equation~\eqref{eq:radialdistortion}.
+
+\question{How does the algorithm know that it has converged to a good (or good enough) solution?
+What is the error function, exactly?}
+
+\question{Try polynomial and division models. Comment on the difference in results.}
+
+\question{Explain the difference in the principal point position between [A] and [B].}
+
+\question{Explain why we see blurry regions in the output result.}
+
+\question{Is the result reliable? Please comment.}
+
+\question{Show which kind of radial distortion you get with positive and negative k-values.}
+
+Let us assume that $p=(0,0)$ is the center of the image plane to simplify computations and consider the line $y=1$.
+We are interested in what happens to the $y$ coordinate of a point $(x,1)$ on the line.
+By equation~\eqref{eq:radialdistortion}, we have:
+
+\[y'=1+k_1 (x^2+1)+k_2 (x^2+1)^2\]
+
+Taking the derivative, we obtain
+\[\frac{dy'}{dx}=2k_1 x+4k_2 x(x^2+1)\]
+
+If $k_1,k_2<0$, we find that $y'$ is increasing for $x<0$ and decreasing for $x>0$.
+Hence, we get barrel distortion.
+If $k_1,k_2>0$, we find that $y'$ is decreasing for $x<0$ and increasing for $x<0$.
+This is pincushion distortion.
+
+Note that with this model, if $k_1$ is of a different sign than $k_2$, we can have that horizontal lines get distorted
+in ways that are neither \enquote*{barrel} nor \enquote*{pincushion} (one can picture some arbitrary fourth-degree
+polynomial).
