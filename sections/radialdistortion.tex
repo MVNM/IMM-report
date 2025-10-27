@@ -1,4 +1,4 @@
-\section{Radial Distortion Removal}\label{sec:radialdistortion}
+\subsection{Radial Distortion Removal}\label{subsec:radialdistortion}
 
 In the course, we saw that radial distortion can be modeled as follows:
 \begin{equation}\label{eq:radialdistortion}
@@ -17,15 +17,253 @@ equation~\eqref{eq:radialdistortion}.
 \question{How does the algorithm know that it has converged to a good (or good enough) solution?
 What is the error function, exactly?}
 
+Let us roughly describe how the algorithm works.
+
+First of all, edges are detected using Canny edge detection.
+This algorithm works by computing the gradient at every pixel and then selecting the pixels whose gradients are local
+maxima \textit{along the direction of the gradient} (in that way, the lines we get can only be at most one pixel thick).
+Out of these, the ones with a gradient norm higher than some threshold are considered as edges.
+If the gradient norm is greater than some other low threshold, the points get investigated more before being discarded:
+if they are next to a point that is classified as an edge, they also get classified as edges.
+
+An improved version of Hough transform is used to group the edge points into lines.
+The Hough transform works by mapping points $(x,y)$ to functions in the 2D space $(\theta,\rho)$ where each point
+corresponds exactly one line, where $\theta$ is the angle between the normal to the line and the origin and $\rho$ is
+the distance of the line to the origin.
+The set of lines that can go through the point $(x,y)$ can be computed by varying the angle of the line $\theta$
+(and $\rho=x\cos\theta + y\sin\theta$).
+In practice, we consider a limited number of possible values of $\theta$.
+If multiple points are on a line, then their corresponding curves in the $(\theta,\rho)$ space will intersect at the
+point that corresponds to the line they lie in.
+The points in the Hough space that have a large number of functions that go through them are most likely lines in the
+input image (this process is called voting and works by associating to each point in the discretized Hough space the
+number of curves that go through them).\footnote{I took the time to properly explain the Hough transform because as a
+CS major, I never encountered it before.}
+
+\begin{figure}[ht]
+    \centering
+    \captionsetup{justification=centering}
+    \begin{minipage}{.4\textwidth}
+        \centering
+    \includegraphics[width=0.95\textwidth]{assets/distortion/image_space}
+    \caption{Points in the image space (generated using ChatGPT).}
+    \end{minipage}%
+    \hfill
+    \begin{minipage}{.6\textwidth}
+        \centering
+    \includegraphics[width=0.95\textwidth]{assets/distortion/hough_space}
+    \caption{The representation of each point in Hough space (one point corresponds to one curve, with each point
+    on the curve representing a possible line that go through the original point).}
+    \end{minipage}
+    \label{fig:houghtransform}
+\end{figure}
+
+The issue with the Hough transform is that it can only detect straight lines, but lines get distorted by radial
+distortion (note that the straight lines don't get bent much close to the distortion center).
+The idea is to consider a 3-dimensional Hough space $(\theta,\rho,k)$ where $k$ is a single parameter that models the
+radial distortion applied to the input image (in particular the center of distortion would be at the center of the
+image).
+
+The idea is that, for every value of $k$ considered, we construct the undistorted image and perform the Hough transform
+on these \("\)corrected\("\) images.
+Then, the value of $k$ that is used is the one that produces the better lines.
+The way this is done is by attributing a score $v_k$ for every value of $k$:
+\[v_k=\sum_{j=1}^{n}
+\sum_{p\in\text{Edge}:d(line_j,C_k(p))<1} \frac{1}{1+d(line_j,C_k(p))}\]
+The above equation states that for every line $1<j<n$ that the Hough transform has found in the corrected picture
+(with radial distortion parameter $k$), we consider the points $p\in\text{Edge}$ that are close enough to
+the $j$th line and add a term that penalizes $k$ if the points land far from the line.
+
+Intuitively, this procedure is equivalent to testing out a large number of simple lens models and keeping the one that
+gives us the straightest lines.
+Obviously, the model here is too simple for it to find every line: only some fraction of the lines will be successfully
+retrieved correctly but this gives us enough to start optimizing.
+
+Once a first set of lines and a first estimation of the lens model has been achieved begins the iterative optimization
+part.
+The lens distortion model is a tuple $\mathbf{k}=(k_1,k_2,p_x,p_y)$, exactly as in equation~\eqref{eq:radialdistortion}.
+The previous step gave us a set of lines $\{line_j\}_j$.
+
+\begin{equation}\label{eq:energydistortion}
+    E(\mathbf{k})=\sum_{line_j}\sum_{p\in line_j}d(C_{\mathbf{k}}(p), line_j)^2
+\end{equation}
+
+By minimizing $E$, one can find a new (hopefully better) estimation of the lens distortion model which makes new lines
+appear.
+Using a regular 2D Hough transform, one can find straight lines in the corrected image (the one induced by the
+value of $\mathbf{k}$ that was just found by the optimization procedure).
+If this Hough transform gives new lines, we can perform a new pass of the optimization procedure described just above
+and keep repeating until no new lines are found.
+Once no new lines are found, the algorithm stops and the final lens distortion model is the final value of $\mathbf{k}$.
+
 \question{Try polynomial and division models. Comment on the difference in results.}
+
+We have seen that radial distortion can be modeled with equation~\eqref{eq:radialdistortion}.
+This model of radial distortion is known as the \textit{polynomial} model.
+There exists another way of modeling distortion (which does not have any physical interpretation) known as the
+division model:
+\begin{equation}\label{eq:radialdistortiondivision}
+    \begin{cases}
+    x'&=p_x+(x-p_x)\frac{1}{1+k_1 r^2+k_2 r^4}\\
+    y'&=p_y+(y-p_y)\frac{1}{1+k_1 r^2+k_2 r^4}
+\end{cases}
+\end{equation}
+
+Figures~\ref{fig:outputpolynomial} and~\ref{fig:outputdivision} show the result of~\citep{lensdistortioncorrection} on
+the same image but using respectively the polynomial and the division models.
+
+Immediately, we observe that the division model gives a better result on this specific image: the handrail is still
+bent in the first corrected image.
+Because of the better model, the Hough transform actually finds more lines in the division corrected image (70) than in
+the polynomial corrected image (61).
+It seems that doing radial distortion removal with the polynomial model tends to actually underestimate the strength
+of the distortion.
+From our testing, we observe that this happens consistently whevener the strength of the distortion is high.
+Indeed, we can see that the lines present at the edge of the uncorrected image (which are thus strongly distorted) are
+more likely to be correctly identified when using the division model.
+
+\begin{figure}[H]
+    \centering
+    \captionsetup{justification=centering}
+    \begin{minipage}{.5\textwidth}
+        \centering
+    \includegraphics[width=0.95\textwidth]{assets/distortion/output_polynomial}
+    \end{minipage}%
+    \hfill
+    \begin{minipage}{.5\textwidth}
+        \centering
+    \includegraphics[width=0.95\textwidth]{assets/distortion/hough_polynomial}
+    \end{minipage}
+    \caption{Output and Hough for image [A] using the polynomial model.}
+    \label{fig:outputpolynomial}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \captionsetup{justification=centering}
+    \begin{minipage}{.5\textwidth}
+        \centering
+    \includegraphics[width=0.95\textwidth]{assets/distortion/output_division}
+    \end{minipage}%
+    \hfill
+    \begin{minipage}{.5\textwidth}
+        \centering
+    \includegraphics[width=0.95\textwidth]{assets/distortion/hough_division}
+    \end{minipage}
+    \caption{Output and Hough for image [A] using the division model.}
+    \label{fig:outputdivision}
+\end{figure}
+
+As a sidenote, we observe that Hough transforms are able to detect discontinuous lines (for instance the bottom
+of the handrail depicted in dark red in figure~\ref{fig:outputdivision}, which makes sense when reasoning about the
+way that such lines are found).
 
 \question{Explain the difference in the principal point position between [A] and [B].}
 
+Figure~\ref{fig:outputdivisionAB} shows a comparison of both output images.
+
+Image [B] is a cropped version of image [A], where the first $\sim 135$ columns of pixels were cut.
+Since both images were taken using the same camera, we expect the principal point of the cropped image to be
+$\sim 135$ pixels to the left of the one in the uncropped image.
+
+As we have seen above, the principal point (the center of distortion) is estimated by the radial distortion removal
+algorithm.
+For image [A], we get $p=(576.5, 381.0)$ and for image [B], we get $p=(464.0, 367.7)$.
+
+The translation between the two is not exactly 135 pixels to the left, which can be explained by the fact that both
+the Hough transform and the Canny edge detection are not perfect.
+
+\begin{figure}[H]
+    \centering
+    \captionsetup{justification=centering}
+    \begin{minipage}{.5\textwidth}
+        \centering
+    \includegraphics[width=0.95\textwidth]{assets/distortion/output_division}
+    \end{minipage}%
+    \hfill
+    \begin{minipage}{.5\textwidth}
+        \centering
+    \includegraphics[width=0.95\textwidth]{assets/distortion/output_division_b}
+    \end{minipage}
+    \caption{Output for images [A] and [B] respectively (divison model).}
+    \label{fig:outputdivisionAB}
+\end{figure}
+
 \question{Explain why we see blurry regions in the output result.}
+
+The blurry regions come from the fact that the edges of the picture are stretched.
+The further the pixel is from the center of distortion, the largest the stretching required to recover the straight
+lines and thus the more blur.
+This explains why the part of the image close to the center of distortion remains unblurred.
+
+Note that this effect is exagerrated in pictures [A] and [B] because the edges of the image were already blurred to
+begin with.
+Figure~\ref{fig:ballpitdistortion} gives an example of how a fully unblurry image becomes blurry on the edges when
+corrected.
 
 \question{Is the result reliable? Please comment.}
 
+Figure~\ref{fig:outputc} shows another output, this time on a picture that was pincushioned distorted (look at the
+lines that are formed by the edges of the keyboard on the left, top and bottom).
+Removing the distortion with the division model improves things, but some pincushioning is still apparent.
+
+\begin{figure}[H]
+    \centering
+    \captionsetup{justification=centering}
+    \begin{minipage}{.5\textwidth}
+        \centering
+    \includegraphics[width=0.95\textwidth]{assets/distortion/picture_c}
+    \end{minipage}%
+    \hfill
+    \begin{minipage}{.5\textwidth}
+        \centering
+    \includegraphics[width=0.95\textwidth]{assets/distortion/output_c}
+    \end{minipage}
+    \caption{Input image [C] and Output with the division model.}
+    \label{fig:outputc}
+\end{figure}
+
+Interestingly, the algorithm worsens the distortion if used with the polynomial model, as shown in
+figure~\ref{fig:output_c_polynomial}.
+This seems to confirm the fact that the division model is more suited to model distortion with two parameters.
+
+\begin{figure}[H]
+    \centering
+    \captionsetup{justification=centering}
+    \includegraphics[width=0.475\textwidth]{assets/distortion/output_c_polynomial}
+    \caption{Output of image [C] with the polynomial model.}
+    \label{fig:output_c_polynomial}
+\end{figure}
+
+In general, in the right conditions, the results seem to be reliable.
+That is, if the image contains enough feature points and (distorted) straight lines, the algorithm will most likely
+correct the radial distortion (if used with the division model).
+This means that it is not possible (at least using this specific technique) to undistort an image that was taken of a
+scene that does not have any straight lines.
+One can easily demonstrate this fact by applying the algorithm to an image of, say, a ballpit.
+Figure~\ref{fig:ballpitdistortion} shows that the algorithm fails in such a situation.
+
+\begin{figure}[H]
+    \centering
+    \captionsetup{justification=centering}
+    \begin{minipage}{.5\textwidth}
+        \centering
+    \includegraphics[width=0.95\textwidth]{assets/distortion/output_ballpit}
+    \end{minipage}%
+    \hfill
+    \begin{minipage}{.5\textwidth}
+        \centering
+    \includegraphics[width=0.95\textwidth]{assets/distortion/ballpit_hough}
+    \end{minipage}
+    \caption[Distortion removal of an already undistorted ball pit image (Output and Hough)]{Distortion removal of an already undistorted ball pit image\footnotemark (Output and Hough).}
+    \label{fig:ballpitdistortion}
+\end{figure}
+\footnotetext{\href{https://www.vox.com/the-goods/2019/4/4/18292466/ball-pit-history-playground-plyplce-soft-play}{https://www.vox.com/the-goods/2019/4/4/18292466/ball-pit-history-playground-plyplce-soft-play}}
+
+
 \question{Show which kind of radial distortion you get with positive and negative k-values.}
+
+To answer this question, we will study analytically what happens to a horizontal line when distorted.
 
 Let us assume that $p=(0,0)$ is the center of the image plane to simplify computations and consider the line $y=1$.
 We are interested in what happens to the $y$ coordinate of a point $(x,1)$ on the line.
