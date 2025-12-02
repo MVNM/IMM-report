@@ -30,8 +30,8 @@ An improved version of Hough transform is used to group the edge points into lin
 The Hough transform works by mapping points $(x,y)$ to functions in the 2D space $(\theta,\rho)$ where each point
 corresponds exactly one line, where $\theta$ is the angle between the normal to the line and the origin and $\rho$ is
 the distance of the line to the origin.
-The set of lines that can go through the point $(x,y)$ can be computed by varying the angle of the line $\theta$
-(and $\rho=x\cos\theta + y\sin\theta$).
+The set of lines that can go through the point $(x,y)$ can be computed by varying the angle of the normal to the line
+$\theta$ (and $\rho=x\cos\theta + y\sin\theta$).
 In practice, we consider a limited number of possible values of $\theta$.
 If multiple points are on a line, then their corresponding curves in the $(\theta,\rho)$ space will intersect at the
 point that corresponds to the line they lie in.

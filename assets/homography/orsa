@@ -1,0 +1,31 @@
+for (size_t iter=0; iter < nIter; iter++) {
+  // Get random sample
+  UniformSample(sizeSample, vec_index, &vec_sample);
+
+  std::vector<Model> vec_models; // Up to max_models solutions
+  Fit(vec_sample, &vec_models);
+
+  // Evaluate models
+  // In the case of the homography, we only get ONE possible model
+  bool better = false;
+  for (size_t k = 0; k < vec_models.size(); ++k) {
+    // Residuals computation and ordering
+    for (int i = 0; i < nData; ++i) {
+      int s;
+      // compute the error by applying H to every point
+      double error = Error(vec_models[k], i, &s);
+      vec_residuals[i] = ErrorIndex(error, i, s);
+    }
+    std::sort(vec_residuals.begin(), vec_residuals.end());
+
+    // Most meaningful discrimination inliers/outliers
+    ErrorIndex best = bestNFA(vec_residuals, loge0, maxThreshold,
+                                vec_logc_n, vec_logc_k);
+    if(best.error < minNFA) // A better model was found
+    {
+      better = true;
+      minNFA = best.error;
+      // other updates...
+    }
+  }
+}

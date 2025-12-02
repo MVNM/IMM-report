@@ -1,0 +1,19 @@
+void HomographyModel::Fit(const std::vector<int> &indices,
+                          std::vector<Model> *H) const {
+  const int n = static_cast<int>( indices.size() );
+  libNumerics::matrix<> A = libNumerics::matrix<double>::zeros(n*2,9);
+  // Fill the matrix A with the provided n data points
+
+  libNumerics::vector<double> vecNullspace(9);
+  // Solve the system Ah=0 using SVD
+  if( libNumerics::SVD::Nullspace(A,&vecNullspace) )
+  {
+    libNumerics::matrix<double> M(3,3);
+    M.read(vecNullspace);   // 9x1 vector into 3x3 matrix
+    if(M.det() < 0)
+      M = -M;
+    M /= M(2,2);    // normalize M
+  }
+
+  H->push_back(M);
+}
