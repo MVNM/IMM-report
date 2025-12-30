@@ -1,9 +1,9 @@
 \subsection{Homography for panoramic stitching}\label{subsec:homography}
 
-A homography is a transformation of space that can model a translation, rotation and shear of a picture as well a
+A homography is a transformation of space that can model a translation, rotation and shear of a picture, as well as a
 perspective change.
 This is used in the context of panoramic stitching to take two pictures with a common section and stitch them
-together (only if the two pictures are taken from the same position or if the photographied scene is a plane).
+together (only if the two pictures are taken from the same position or if the photographied scene is planar).
 
 A homography is a $3\times 3$ matrix that maps 2D points in homogeneous coordinates to other 2D points in homogeneous
 coordinates.
@@ -97,8 +97,7 @@ The homography matrix for the above stitching follows (\textit{QH.1}).
 
 As mentioned before, null values for $h_7$ and $h_8$ imply no change of perspective between the two images.
 Here, $h_7$ and $h_8$ and are both very close to 0 which means that practically no perspective change occurred between
-the two pictures of figure~\ref{fig:castleimages}, which seems plausible (the camera seems to have only tilded slightly
-and changed orientation between the two shots, not moved in space).
+the two pictures of figure~\ref{fig:castleimages}, which seems plausible.
 
 Comparatively, $h_3$ and $h_6$ are very large.
 This is also plausible because they represent an overall translation in pixels (since $w'\approx 1$) and the images
@@ -106,14 +105,14 @@ are $800\times 600$.
 
 The tool outputs not only the final panorama but also \textit{input images} and \textit{registered images}.
 
-The input image 1 and 2 are simply the input images.
+The input images 1 and 2 are simply the input images.
 The registered images 1 and 2 are the two images that make up the final panorama.
 That is, registered image 2 is simply the input image 2 but cropped (because the final panorama is of limited size
 in this particular demo) and registered image 1 is the input image 1 but after the homography (and cropped as well).
-This is because the authors decide to fix the second image and to warp the first one onto it: only the first image
+This is because the authors decided to fix the second image and to warp the first one onto it: only the first image
 is modified to build the panorama (\textit{QH.2}).
 
-Importantly, just taking the average of these two registered images pixel-wise gives the output panorama.
+Taking the average of these two registered images pixel-wise gives the output panorama.
 
 \begin{figure}[ht]
     \centering
@@ -138,7 +137,7 @@ They pick some set of points and compute the homography that best fits the point
 \begin{figure}[H]
     \centering
     \lstinputlisting[label={lst:orsa}]{assets/homography/orsa}
-    \caption{(Simplified) code from~\citep{homography} apply ORSA, their special RANSAC\@.}
+    \caption{(Simplified) code from~\citep{homography} that implements ORSA, their special RANSAC\@.}
     \label{fig:orsa}
 \end{figure}
 

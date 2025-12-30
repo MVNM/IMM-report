@@ -1,5 +1,7 @@
 \subsection{Radial Distortion Removal}\label{subsec:radialdistortion}
 
+Radial distortion is a type of unavoidable distortion that bends straight lines.
+
 In the course, we saw that radial distortion can be modeled as follows:
 \begin{equation}\label{eq:radialdistortion}
 \begin{cases}
@@ -14,19 +16,17 @@ same amount.
 Furthermore, only knowing $p$ and $k_1,k_2$ enables one to invert any distortion by inverting
 equation~\eqref{eq:radialdistortion}.
 
-\question{How does the algorithm know that it has converged to a good (or good enough) solution?
-What is the error function, exactly?}
-
+IPOL~\citep{lensdistortioncorrection} implemented an algorithm to estimate and remove radial distortion on input images.
 Let us roughly describe how the algorithm works.
 
 First of all, edges are detected using Canny edge detection.
 This algorithm works by computing the gradient at every pixel and then selecting the pixels whose gradients are local
 maxima \textit{along the direction of the gradient} (in that way, the lines we get can only be at most one pixel thick).
-Out of these, the ones with a gradient norm higher than some threshold are considered as edges.
+Out of these, the ones with a gradient norm higher than some threshold are considered edges.
 If the gradient norm is greater than some other low threshold, the points get investigated more before being discarded:
 if they are next to a point that is classified as an edge, they also get classified as edges.
 
-An improved version of Hough transform is used to group the edge points into lines.
+An improved version of the Hough transform is used to group the edge points into lines.
 The Hough transform works by mapping points $(x,y)$ to functions in the 2D space $(\theta,\rho)$ where each point
 corresponds exactly one line, where $\theta$ is the angle between the normal to the line and the origin and $\rho$ is
 the distance of the line to the origin.
@@ -70,7 +70,7 @@ Then, the value of $k$ that is used is the one that produces the better lines.
 The way this is done is by attributing a score $v_k$ for every value of $k$:
 \[v_k=\sum_{j=1}^{n}
 \sum_{p\in\text{Edge}:d(line_j,C_k(p))<1} \frac{1}{1+d(line_j,C_k(p))}\]
-The above equation states that for every line $1<j<n$ that the Hough transform has found in the corrected picture
+The above equation states that for every line $1\leq j\leq n$ that the Hough transform has found in the corrected picture
 (with radial distortion parameter $k$), we consider the points $p\in\text{Edge}$ that are close enough to
 the $j$th line and add a term that penalizes $k$ if the points land far from the line.
 
@@ -94,9 +94,8 @@ Using a regular 2D Hough transform, one can find straight lines in the corrected
 value of $\mathbf{k}$ that was just found by the optimization procedure).
 If this Hough transform gives new lines, we can perform a new pass of the optimization procedure described just above
 and keep repeating until no new lines are found.
-Once no new lines are found, the algorithm stops and the final lens distortion model is the final value of $\mathbf{k}$.
-
-\question{Try polynomial and division models. Comment on the difference in results.}
+Once no new lines are found, the algorithm stops and the final lens distortion model is the final value of
+$\mathbf{k}$ (\textit{QR.1}).
 
 We have seen that radial distortion can be modeled with equation~\eqref{eq:radialdistortion}.
 This model of radial distortion is known as the \textit{polynomial} model.
@@ -120,7 +119,7 @@ It seems that doing radial distortion removal with the polynomial model tends to
 of the distortion.
 From our testing, we observe that this happens consistently whevener the strength of the distortion is high.
 Indeed, we can see that the lines present at the edge of the uncorrected image (which are thus strongly distorted) are
-more likely to be correctly identified when using the division model.
+more likely to be correctly identified when using the division model (\textit{QR.2}).
 
 \begin{figure}[H]
     \centering
@@ -158,9 +157,7 @@ As a sidenote, we observe that Hough transforms are able to detect discontinuous
 of the handrail depicted in dark red in figure~\ref{fig:outputdivision}, which makes sense when reasoning about the
 way that such lines are found).
 
-\question{Explain the difference in the principal point position between [A] and [B].}
-
-Figure~\ref{fig:outputdivisionAB} shows a comparison of both output images.
+Figure~\ref{fig:outputdivisionAB} shows a comparison of two output images.
 
 Image [B] is a cropped version of image [A], where the first $\sim 135$ columns of pixels were cut.
 Since both images were taken using the same camera, we expect the principal point of the cropped image to be
@@ -171,7 +168,7 @@ algorithm.
 For image [A], we get $p=(576.5, 381.0)$ and for image [B], we get $p=(464.0, 367.7)$.
 
 The translation between the two is not exactly 135 pixels to the left, which can be explained by the fact that both
-the Hough transform and the Canny edge detection are not perfect.
+the Hough transform and the Canny edge detection are not perfect (\textit{QR.3}).
 
 \begin{figure}[H]
     \centering
@@ -189,8 +186,7 @@ the Hough transform and the Canny edge detection are not perfect.
     \label{fig:outputdivisionAB}
 \end{figure}
 
-\question{Explain why we see blurry regions in the output result.}
-
+In various output figures, we noticed blurry regions.
 The blurry regions come from the fact that the edges of the picture are stretched.
 The further the pixel is from the center of distortion, the largest the stretching required to recover the straight
 lines and thus the more blur.
@@ -199,9 +195,7 @@ This explains why the part of the image close to the center of distortion remain
 Note that this effect is exagerrated in pictures [A] and [B] because the edges of the image were already blurred to
 begin with.
 Figure~\ref{fig:ballpitdistortion} gives an example of how a fully unblurry image becomes blurry on the edges when
-corrected.
-
-\question{Is the result reliable? Please comment.}
+corrected (\textit{QR.4}).
 
 Figure~\ref{fig:outputc} shows another output, this time on a picture that was pincushioned distorted (look at the
 lines that are formed by the edges of the keyboard on the left, top and bottom).
@@ -237,11 +231,11 @@ This seems to confirm the fact that the division model is more suited to model d
 
 In general, in the right conditions, the results seem to be reliable.
 That is, if the image contains enough feature points and (distorted) straight lines, the algorithm will most likely
-correct the radial distortion (if used with the division model).
-This means that it is not possible (at least using this specific technique) to undistort an image that was taken of a
-scene that does not have any straight lines.
+correct the radial distortion (at least relatively good results if used with the division model).
+This means that it is not possible (will produce at least using this specific technique) to undistort an image that was
+taken of a scene that does not have any straight lines.
 One can easily demonstrate this fact by applying the algorithm to an image of, say, a ballpit.
-Figure~\ref{fig:ballpitdistortion} shows that the algorithm fails in such a situation.
+Figure~\ref{fig:ballpitdistortion} shows that the algorithm fails in such a situation (\textit{QR.5}).
 
 \begin{figure}[H]
     \centering
@@ -260,9 +254,8 @@ Figure~\ref{fig:ballpitdistortion} shows that the algorithm fails in such a situ
 \end{figure}
 \footnotetext{\href{https://www.vox.com/the-goods/2019/4/4/18292466/ball-pit-history-playground-plyplce-soft-play}{https://www.vox.com/the-goods/2019/4/4/18292466/ball-pit-history-playground-plyplce-soft-play}}
 
-
-\question{Show which kind of radial distortion you get with positive and negative k-values.}
-
+Finally, one might ask himself what is the influence of the signs of $k_1$ and $k_2$ on the type of distortion in
+the distorted image.
 To answer this question, we will study analytically what happens to a horizontal line when distorted.
 
 Let us assume that $p=(0,0)$ is the center of the image plane to simplify computations and consider the line $y=1$.
@@ -281,4 +274,4 @@ This is pincushion distortion.
 
 Note that with this model, if $k_1$ is of a different sign than $k_2$, we can have that horizontal lines get distorted
 in ways that are neither \enquote*{barrel} nor \enquote*{pincushion} (one can picture some arbitrary fourth-degree
-polynomial).
+polynomial, \textit{QR.6}).

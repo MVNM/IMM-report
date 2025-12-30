@@ -1,11 +1,86 @@
 \subsection{Zhang's method}\label{subsec:zhangsmethod}
 
-\question{Which initial guess is given to the SfM in [Y,Z]? Explain how it is obtained.}
+The goal of Zhang's method~\citep{zhang} is to precisely find the position of multiple cameras in space ($R$ and $t$).
+To achieve this, all that is required is that all cameras have a checkerboard with known dimensions in their frame.
+Importantly, nothing must be known in advance about the extrinsics ($R$, $t$) or the intrinsics $K$ of the cameras.
 
-\question{Find the correspondences between the theory syllabus text and the [Y,Z] references to explain the main
-processing steps. Your description can refer to page numbers and equations in the syllabus
-    (consider this question rather as preparation for similar questions at the oral exam; do not give too many
-    details in the report).}
+The first step is to locate the checkerboard in the frame of every camera and compute the homography that maps the
+(known) 3D-coordinates of the feature points on the 2D image.
+By convention, Zhang chooses to put the checkerboard in the $XY$ plane ($Z=0$).
+Since the precise dimensions of the checkerboard are known, we know with full precision the position $(X,Y,0)$ in 3D
+space of every feature point (the intersection of 4 squares) on the checkerboard.
 
-\question{Is radial distortion estimation (and removal) embedded as with SfM from the theory lessons? Explain the
-similarities and/or differences.}
+We have:
+\begin{align*}
+    \left[\begin{array}{c}
+              x \\ y \\ 1
+    \end{array}\right] &= K\left[
+    \begin{array}{c c c c}
+        \textbf{r}_1 & \textbf{r}_2 & \textbf{r}_3 & \textbf{t}
+    \end{array}\right]\cdot
+    \left[\begin{array}{c}
+              X \\ Y \\ 0 \\ 1
+    \end{array}\right]\\
+    &=K\left[
+    \begin{array}{c c c}
+        \textbf{r}_1 & \textbf{r}_2 & \textbf{t}
+    \end{array}\right]\cdot
+    \left[\begin{array}{c}
+              X \\ Y \\ 1
+    \end{array}\right]
+\end{align*}
+
+The homography:
+\[H=\left[\begin{array}{c c c}
+        \textbf{h}_1 & \textbf{h}_2 & \textbf{h}_3
+    \end{array}\right]=K\left[\begin{array}{c c c}
+        \textbf{r}_1 & \textbf{r}_2 & \textbf{t}
+    \end{array}\right]\]
+can be estimated using the regular techniques to find homographies (section~\ref{subsec:homography}).
+
+If we let:
+\[\textbf{v}_{ij}=\left[\begin{array}{c c c c c c}
+         h_{i1} h_{j1} & h_{i1}h_{j2}+h_{i2}h_{j1} & h_{i2}h_{j2} & h_{i3}h_{j1}+h_{i1}h_{j3} & h_{i3}h_{j2}+h_{i2}h_{j3}
+                            & h_{i3}h_{j3}
+\end{array}\right]^t\]
+
+Then, we can retrieve a 6-dimensional vector $\textbf{b}$ by solving the equation:
+\[\left[\begin{array}{c}
+            \textbf{v}^t_{12}\\
+            (\textbf{v}_{11}-\textbf{v}_{22})^t
+\end{array}\right]\textbf{b}=\textbf{0}\]
+Note that each estimated $H$ gives two new equations but $\textbf{b}$ contains 6 unknowns.
+Hence, we need at least 3 different images of the checkerboard (we assume that all cameras have the same $K$ matrix, so
+simply one image per camera).
+
+Using the vector $\textbf{b}$, we can extract the intrinsics of the camera(s) $K$ (see appendix B of~\citep{zhang}).
+With the estimated $K$ and the homography $H$ (that are different for all cameras), it is possible to approximate the
+rotation $R$ and the translation $t$.
+
+These initial $R_i$ and $t_i$ can be computed for all cameras $i$ ($k_1,k_2$ are all set to 0 initially, \textit{QZ.1}).
+See section 3.1 of~\citep{zhang} for a more in-depth explanation.
+
+We have $n$ cameras and $m$ known 3D points $\textit{M}_j$ on the checkerboard.
+For all $n$ cameras, we know the 2D-coordinates of the $j$th checkerboard point projected onto the image plane
+$\textbf{m}_{ij}$ (we assume here that the radial distortion is not removed from the image).
+Let $\hat{\textbf{m}}(K,R_i,t_i,\textit{M}_j)$ be a function that computes the projection of the 3D point $\textit{M}_j$
+onto the image plane of a camera with extrinsics $(R_i,t_i)$ and intrinsics $K$.
+Then, the energy that is minimized to optimize $K,R_i$ and $t_i$ is (equation $10$ in~\citep{zhang}):
+
+\[\sum_{i=1}^{n} \sum_{j=1}^{m} \left\|\textbf{m}_{ij}-\hat{\textbf{m}}(K,R_i,t_i,\textit{M}_j)\right\|_2^2\]
+
+Remarkably, the above equation is exactly what is done in SfM except for the fact that SfM also optimizes for the 3D
+position of the feature points (see page 51 of the syllabus or section~\ref{subsec:colmap}, \textit{QZ.2}).
+
+To take into account the radial distortion (see section~\ref{subsec:radialdistortion}), we can define a new function
+$\breve{\textbf{m}}(K,k_1,k_2,R_i,t_i,\textit{M}_j)$ that computes the projection of the 3D point onto the image plane but
+then applies the radial distortion associated with the distortion parameters $(k_1,k_2)$.
+Then, the new energy function to minimize becomes (equation 14 in~\citep{zhang}):
+\[\sum_{i=1}^{n} \sum_{j=1}^{m} \left\|\textbf{m}_{ij}-\breve{\textbf{m}}(K,k_1,k_2,R_i,t_i,\textit{M}_j)\right\|_2^2\]
+
+The exact same idea can be performed in SfM\@.
+
+Zhang also proposes an alternative way of estimating $k_1$ and $k_2$ by alternating the optimization of the intrinsics
+and extrinsincs, then the optimization of $k_1$ and $k_2$ until convergence.
+The author states that this method is in practice slower than simply optimizing $k_1$ and $k_2$ at the same time as the
+other parameters (see section 3.3 of~\citep{zhang}).

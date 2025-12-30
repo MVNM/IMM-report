@@ -1,12 +1,176 @@
 \subsection{Colmap}\label{subsec:colmap}
 
-\question{Report (provide a trend on) how the quality of the reconstruction changes with the number of photos used in
-the processing. How many input pictures (order of magnitude) are needed to reconstruct your 3D scene decently?}
+The goal of SfM is to, given a large number $n$ of images of the same scene taken by cameras
+(with potentially different intrinsics) from different angles, retrieve both the position of the cameras and the
+position of feature points in 3D space.
 
-\question{Report intrinsics $K$ and extrinsics $(R|t)$ between the first and $N$-th input view, with $N$ in the order
-of ¼ of the total number of input views you used for the 3D reconstruction. Also provide radial distortion parameters.
-Do all these values look reasonable to you?}
+Using regular methods such as SIFT, we can extract $m$ feature points in the $n$ images.
+Then, for $q_{ij}$ the $j$th feature point in the $i$th image, $C_i$ the center of the $i$th camera, $q_j$ the
+3D coordinates of the $j$th feature point and $P(C_i,q_j)$ the projection of $q_j$ onto the $i$th camera,
+we can define the following energy function, were we must optimize over the vector $(C,q)$:
+\[E^2=\sum_{i=1}^n\sum_{j=1}^m \left\|q_{ij}-P(C_i,q_j)\right\|_2^2=
+\sum_{i=1}^n\sum_{j=1}^m \left\|q_{ij}-\hat{q}_{ij}\right\|_2^2\]
+Regular continuous optimization techniques such as Levenberg-Marquardt can be used to minimize the above energy.
+Note that many more things can be estimated using this energy function by incorporating new parameters in the
+projection function.
+For instance, it could have a $k_i=(k_{i1},k_{i2})$ parameter to estimate radial distortion or $K_i$ to estimate camera
+intrinsics.
 
-\question{Extract and show the depth map for one view.}
+Colmap~\citep{colmap1, colmap2} is a software used to perform SfM easily, with a GUI\@.
 
-\question{Redo the previous two exercises using Colmap, instead.}
+We have taken a video of a scene (available alongside this report) and reconstructed a 3D point cloud using
+$N=10,17,25,75,150$ input images.
+We can observe very clearly that the more input images (the larger $N$), the denser the generated point cloud.
+From approximately $N=75$, most details are present in the final point cloud, and we can say that roughly 100
+input images are required to have a good reconstruction (\textit{QC.1}).
+
+When $N=150$, even the reflection of the Rubik's cube (the one on the top right) on the black book under it becomes
+clearly visible in the point cloud.
+
+\begin{figure}
+    \begin{minipage}{.5\textwidth}
+    \begin{subfigure}{\textwidth}
+        \centering
+    \includegraphics[height=0.2\textheight]{assets/colmap/10-input-out}
+    \subcaption{$N=10$}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \centering
+    \includegraphics[height=0.2\textheight]{assets/colmap/25-input-out}
+    \subcaption{$N=25$}
+    \end{subfigure}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{.5\textwidth}
+    \begin{subfigure}{\textwidth}
+        \centering
+    \includegraphics[height=0.2\textheight]{assets/colmap/17-input-out}
+    \subcaption{$N=17$}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \centering
+    \includegraphics[height=0.2\textheight]{assets/colmap/75-input-out}
+    \subcaption{$N=75$}
+    \end{subfigure}
+    \end{minipage}
+    \caption{Output of SfM for varying number of input images.}
+    \label{fig:figure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \captionsetup{justification=centering}
+    \includegraphics[width=0.6\textwidth]{assets/colmap/150-input-out}
+    \caption{Output of SfM for $N=150$.}
+    \label{fig:colmap_depth_150}
+\end{figure}
+
+
+\begin{figure}[ht]
+    \centering
+    \captionsetup{justification=centering}
+    \begin{minipage}{.5\textwidth}
+        \centering
+    \includegraphics[width=0.7\textwidth]{assets/colmap/frame-000}
+    \end{minipage}%
+    \hfill
+    \begin{minipage}{.5\textwidth}
+        \centering
+    \includegraphics[width=0.7\textwidth]{assets/colmap/frame-190}
+    \end{minipage}
+    \caption{The first input view (left) and the $N/4$th input view (right).}
+    \label{fig:colmap-views}
+\end{figure}
+
+The software provides many output files that contain both the intrinsics and the extrinsics of all input views, as well
+as e.g.\ the estimated radial distortion parameters.
+For instance, we give the intrinsics and the distortion parameters of the $N/4$th view.
+
+\[K=\left[\begin{array}{c c c}
+              1621.968 & 0 & 720 \\
+              0 & 1616.739 & 960\\
+              0 & 0 & 1
+\end{array}\right]\hspace*{2em}k_1=0.04524\hspace*{2em} k_2=-0.08363\]
+
+That the input images are of size $1440\times 1920$ and the camera was the exact same used all throughout this report.
+In particular, it is expected that the focal length is longer (in pixels) than the one estimated in
+section~\ref{subsec:rectification}.
+The principal point is located at the exact center of the image and the strength of the radial distortion is small.
+
+In the outputs, we can read the rotation (given as a quaternion) $R$ and the translation $T$ of each camera.
+The position of the camera center $C$ is then given by the
+equation\footnote{\url{https://colmap.github.io/format.html\#images-txt}}
+(this means that $T$ does not give the position of the camera but holds some other information):
+\[C=-R^t T\]
+
+Let us find the rotation and translation between the first and $N/4$th input view.
+Let $R_1$ and $T_1$ be the rotation and translation associated to the first input view and $R_N$ and $T_N$ the ones
+associated to the $N/4$th input view.
+
+The rotation between the two views is given by (first invert the rotation of camera 1 to reset it and then apply the
+other rotation):
+\[R_{1N}=R_N R_1^t\]
+If $C_1$ is the position of the camera center for the first camera and $C_N$ for the other, the translation between
+the two cameras is:
+\[t_{1N}=C_N-C_1\]
+
+Using the actual data, we are able to find $R_{1N}$ and $t_{1N}$ (\textit{QC.2}):
+\[R_{1N}=\left[\begin{array}{c c c}
+                   0.504 & -0.523 & 0.6866\\
+ 0.526 & 0.816 & 0.236\\
+ -0.684 & 0.242 & 0.687
+\end{array}\right]\hspace*{2em} t_{1N}=
+\left[\begin{array}{c c c}
+     6.874 & -2.581 & 3.962
+\end{array}\right]^t\]
+
+\begin{figure}[H]
+    \centering
+    \captionsetup{justification=centering}
+    \includegraphics[width=0.35\textwidth]{assets/colmap/depth}
+    \caption{The depth map of the $N/4$th input view (\textit{QC.3}).}
+    \label{fig:colmap_depth}
+\end{figure}
+
+We would like to convert the rotation matrix $R$ into an axis of rotation $\textbf{v}$ with
+$||\textbf{v}||_2=1$ and a rotation angle $\theta$.
+Rodrigues' rotation formula states:
+\[R=I+(\sin \theta)[\textbf{v}]_{\times}+(1-\cos\theta)[\textbf{v}]_{\times}^2\]
+By inverting this formula, we find $\textbf{v}$ and
+$\theta$:\footnote{\url{https://en.wikipedia.org/wiki/Axis\%E2\%80\%93angle_representation}}
+\begin{gather*}
+    \theta=\arccos\left(\frac{\text{Tr}(R)-1}{2}\right)\\
+    \textbf{v}=\frac{1}{2\sin\theta}
+    \left[\begin{array}{c}
+        R_{32} - R_{23}\\
+        R_{13} - R_{31}\\
+        R_{21} - R_{12}
+    \end{array}\right]
+\end{gather*}
+
+Inputting the previously found value for $R$, we obtain:
+\[\theta=1.0431,\hspace*{4em}
+\textbf{v}=\left[\begin{array}{c}
+    0.00347\\
+    0.793\\
+    0.607
+\end{array}\right]\]
+
+Figure~\ref{fig:colmap-rot} allows one to visualize the situation (\textit{QC.2}).
+
+\begin{figure}[H]
+    \centering
+    \captionsetup{justification=centering}
+    \begin{minipage}{.5\textwidth}
+        \centering
+    \includegraphics[height=0.2\textheight]{assets/colmap/rotation_1}
+    \end{minipage}%
+    \hfill
+    \begin{minipage}{.5\textwidth}
+        \centering
+    \includegraphics[height=0.2\textheight]{assets/colmap/rotation_2}
+    \end{minipage}
+    \caption{The rotation of the view angle of camera $1$ (green vector) pointing towards the scene around the axis of
+    rotation $\textbf{v}$ (blue line) to obtain view angle of camera $N/4$ (red vector).}
+    \label{fig:colmap-rot}
+\end{figure}

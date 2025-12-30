@@ -1,11 +1,11 @@
 \subsection{Stereo Matching}\label{subsec:stereomatching}
 
-Stereo matching is a technique used to retrieve the depth information out of two rectified images of the same by
-generating either a depth or disparity map.
+Stereo matching is a technique used to retrieve the depth information out of two rectified images of the same scene by
+generating a disparity map.
 
 We will study the approach used by~\citep{stereomatching}.
 
-The diparity at a pixel is the (horizontal) displacement of the pixel in the left image to the pixel representing the
+The disparity at a pixel is the (horizontal) displacement of the pixel in the left image to the pixel representing the
 same point in the 3D scene but in the right image.
 
 We denote by $I^r$, $I^g$ and $I^b$ respectively the red, green and blue channels of the image $I$.
@@ -39,7 +39,7 @@ The main intuition of stereo matching algorithms is to pick the value of $d$ tha
 so for every pixel in the image.
 This approach is essentially the same as what was presented during the lecture.
 
-Slides of the cost volume (for a fixed $d$) are very noisy, which is why the authors of~\citep{stereomatching} implement
+Slices of the cost volume (for a fixed $d$) are very noisy, which is why the authors of~\citep{stereomatching} implement
 a so-called \textit{guided filter}.
 
 \begin{figure}[H]
@@ -136,8 +136,8 @@ the disparity value of the first disoccluded pixel straight to the left or to th
 
 We can observe in figure~\ref{fig:sm_output} that a lot of pixels that are not occluded in either images have their
 disparity value rejected.
-This is because the checkerboard does not have a lot of texture and are monochrome.
-Since these are monochrome regions, a large range of disparity values are possible for these pixels and there is no
+This is because the checkerboard does not have a lot of texture and many parts are monochrome.
+In monochrome regions, a large range of disparity values are possible for these pixels and there is no
 reason that the disparity values found from left to right and from right to left are the same.
 
 The output map is a disparity map and not a depth map, since the pixels closer to the camera are white (and are thus
@@ -150,3 +150,5 @@ This could be explained by the non-lambertian nature of said handle (and the who
 The inner part of the handle is very reflective, which could easily break the algorithm.
 The left side of the vase is also badly reconstructed in the disparity map because it is cut off in the
 right image: it is on the very border of the image (\textit{QS.3}).
+
+Take a look at section~\ref{subsec:viewsynthesis} and~\ref{subsec:icp} for results with our own figures (\textit{QS.4}).

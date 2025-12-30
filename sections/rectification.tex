@@ -54,8 +54,8 @@ minimize the Sampson error:
 Where $J$ is the jacobian of $E$ (in particular, computing $J$ requires the computation of
 $\frac{\partial F}{\partial \theta_{Ry}},\frac{\partial F}{\partial \theta_{Rz}},\ldots$).
 
-Using the continuous optimization algorithm of Levenberg-Marquardt, it is possible to find the best values for
-$s=(\theta_{Ry},\theta_{Rz},\theta_{Lx},\theta_{Ly},\theta_{Lz},g)$ that minimize the sum of $E_s(P_1,P_2)^2$ for all
+Using the continuous optimization algorithm of Levenberg-Marquardt, it is possible to find the best value for
+$s=(\theta_{Ry},\theta_{Rz},\theta_{Lx},\theta_{Ly},\theta_{Lz},g)$ that minimizes the sum of $E_s(P_1,P_2)^2$ for all
 pairs of inlier points (\textit{QR.5}).
 
 Figure~\ref{fig:rectification_base_images} shows two images of the same scene that we will rectify using the online
@@ -161,7 +161,7 @@ lies on the line (\textit{QR.3}).
     \label{fig:yoshi_epipolar}
 \end{figure}
 
-The focal length was estimated by the online tool, and we are thus able to build the two intrinsics matrices (assuming
+The focal length was estimated by the online tool, and we are thus able to build the two intrinsic matrices (assuming
 the principal point is in the center of the $756\times 1006$ pixels images).
 Note that the $K_1$, $K_2$ matrices that the tool outputs are the intrinsics for the cameras of the homographied images.
 \[K_L=\left[
@@ -201,7 +201,7 @@ Where:
 
 We can apply this procedure on the two images of figure~\ref{fig:rectification_base_images}.
 This gives four different possibities for $(R,t)$ with only one that is correct.
-We extrinsics between the left and the right shot are (\textit{QR.4}):
+The extrinsics between the left and the right shot are (\textit{QR.4}):
 \[t=\lambda\left[\begin{array}{c c c}
     0.572 & 0.0713 & -0.138
 \end{array}\right]^t\hspace*{2em}R=\left[\begin{array}{c c c}
@@ -226,18 +226,18 @@ We can visualize these extrinsics using an online tool such as
     \label{fig:rect_twocameras}
 \end{figure}
 
-The issue is that the translation is only known up to scale.
-To retrieve the size of the baseline, we can approximate the depth of some pixel and its disparity and then apply
-the following equation to retrieve the baseline, where $Z$ is the depth (in $mm$), $B$ the baseline (in $mm$), $f$
-the focal length (in $px$) and $d$ the disparity (in $px$):
+A major issue with this technique is that the translation is only known up to scale.
+To retrieve the size of the baseline (the true norm of the translation), we can approximate the depth of some pixel and
+its disparity and then apply the following equation to retrieve the baseline, where $Z$ is the depth (in $mm$), $B$
+the baseline (in $mm$), $f$ the focal length (in $px$) and $d$ the disparity (in $px$):
 
 \begin{equation}\label{eq:disparitydepth}
     Z=B\frac{f}{d}\Longleftrightarrow B=\frac{dZ}{f}
 \end{equation}
 
-We will consider the upmost point of Yoshi's two eyes.
-The top pixel of Yoshi's right eye (the one on the left from the camera's point of view) is located at $(512,372)$ and
-left eye is located at $(552,370)$.
+We will consider the upmost point of Yoshi's left and right eyes (one point on the left eye and one on the right eye).
+In the rectified images, the top pixel of Yoshi's right eye (the one on the left from the camera's point of view) is
+located at $(512,372)$ and the top pixel in his left eye is located at $(552,370)$.
 We have $\Delta x'=552-512=40$ and $\Delta y'=372-370=2$.
 
 We have seen in the lecture that the image point $(x',y')$ has the coordinates $(X,Y,Z)$ is 3D space, where:
@@ -255,13 +255,13 @@ Combining everything, we have:
 \[D=\sqrt{\left(\frac{Z\Delta x'}{f}\right)^2+\left(\frac{Z\Delta y'}{f}\right)^2}=\frac{Z}{f}\sqrt{(\Delta x')^2+(\Delta y')^2}\]
 Finally, rearranging the terms:
 \[Z=\frac{Df}{\sqrt{(\Delta x')^2+(\Delta y')^2}}\]
-Plugging in $f=731.057$ (found by the only tool), $\Delta x'=40$, $\Delta y'=2$ and $D=19.3$ (all found manually),
+Plugging in $f=731.057$ (found by the online tool), $\Delta x'=40$, $\Delta y'=2$ and $D=19.3$ (all found manually),
 we obtain $Z=352.29mm$.
 
-All that is left to compute to apply equation~\eqref{eq:disparitydepth} is to find the disparity of Yoshi's highest
+All that is left to apply equation~\eqref{eq:disparitydepth} is to find the disparity of Yoshi's highest
 right eye's point (we could have considered the left eye, it does not matter since both point have the same depth and
 hence the same disparity).
-In the right image, the pixel is located at $(463,372)$.
+In the right rectified image, the pixel is located at $(463,372)$.
 The disparity is $d=512-463=49$ pixels (and indeed, we can check that the disparity is 49 as well for the other eye,
 justifying our choice of reference points: both eyes truly lie at roughly the same depth $Z$).
 
